@@ -1,0 +1,8 @@
+
+"VertexLitGeneric"
+{
+	"$basetexture" "models/abx/void_event/cure"
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$basealphaenvmapmask" 1
+}
