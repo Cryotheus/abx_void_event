@@ -1,4 +1,4 @@
-autobox.badge:RegisterBadge("void_exploration", "Void Creator", "", 1, "autobox/scoreboard/badges/void_event/event.png", true, function(ply)
+autobox.badge:RegisterBadge("void_creator", "Void Creator", "", 1, "autobox/scoreboard/badges/void_event/event.png", true, function(ply)
 	local badge_stages = {
 		[0] = {
 			Goal = 1,
@@ -38,7 +38,7 @@ autobox.badge:RegisterBadge("void_exploration", "Void Creator", "", 1, "autobox/
 		},
 	}
 	
-	local badge = badge_stages[ply:AAT_GetBadgeProgress("void_exploration")]
+	local badge = badge_stages[ply:AAT_GetBadgeProgress("void_creator")]
 	
 	badge.GetVals = {1, 2, 3, 4}
 	
@@ -61,5 +61,5 @@ resource.AddFile("materials/autobox/scoreboard/badges/void_event/creator_program
 hook.Add("PlayerInitialSpawn", "the_abx_void_event_creator_badges", function(ply)
 	local badge_stage = badge_owners[ply:SteamID()]
 	
-	if badge_stage and ply:AAT_GetBadgeProgress("void_creator") ~= badge_stage then ply:AAT_AddBadgeProgress("void_exploration", badge_stage) end
+	if badge_stage and ply:AAT_GetBadgeProgress("void_creator") ~= badge_stage then ply:AAT_AddBadgeProgress("void_creator", badge_stage) end
 end)

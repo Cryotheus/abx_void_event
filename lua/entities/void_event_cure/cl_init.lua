@@ -1,13 +1,8 @@
 include("shared.lua")
-surface.CreateFont("ABXVoidEventCure", {
-	font = "Roboto",
-	size = 64,
-	weight = 500,
-	antialias = true
-})
+
 
 ENT.Category = "Void Event"
-ENT.PrintName = "Autobox™ Void Cure"
+ENT.PrintName = "Autobox Void Cure™"
 ENT.Text = "200 / 200"
 
 function ENT:Initialize()
@@ -27,6 +22,7 @@ function ENT:DrawTranslucent(flags)
 	angle:RotateAroundAxis(angle:Forward(), 90)
 	
 	cam.Start3D2D(start_pos, angle, 0.05)
-		draw.SimpleTextOutlined(self.Text, "ABXVoidEventCure", 0, 0, Color(237, 219, 189), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2, Color(66, 51, 48))
+		draw.SimpleTextOutlined(self.PrintName, "ABXVoidEventEntity", 0, 0, Color(237, 219, 189), TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 2, Color(66, 51, 48))
+		draw.SimpleTextOutlined(self.Text, "ABXVoidEventEntity", 0, 0, Color(237, 219, 189), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 2, Color(66, 51, 48))
 	cam.End3D2D()
 end

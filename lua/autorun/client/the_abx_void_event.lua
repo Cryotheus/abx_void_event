@@ -2,13 +2,19 @@
 local circle = {}
 local color_mod_key = "$pp_colour_colour"
 local cur_time = CurTime()
+local entity_content_panel_tree
+local entity_content_panel_void_node
+local entity_content_panel_void_node_sizes = {}
 local fog_percent
-local goggles = true
+local goggles = false
 local local_ply = LocalPlayer()
 local in_void = false
 local in_warn = false
+local spawn_menu_tree
 local void_ambience
 --local void_enter_time = 0
+local spawn_menu_node
+local void_active = false
 local void_hooks = {"InitPostEntity", "PreDrawSkyBox", "PreDrawTranslucentRenderables", "RenderScreenspaceEffects", "SetupWorldFog", "Think"}
 --local void_leave_time = 0
 local void_regions = {}
@@ -30,6 +36,7 @@ local color_mod = {
 	["$pp_colour_mulb"] = 0
 }
 
+--PlayerSpawnSENT
 --local functions
 local function calc_size(cur_time, start, speed) return math.max(cur_time - start, 0) * speed end
 
@@ -54,13 +61,30 @@ local function draw_void(mult)
 	end
 end
 
+local function update_spawn_menu(state)
+	--the node in the entities spawn menu, we only want to show it when a void is active
+	if IsValid(entity_content_panel_void_node) then
+		print("state of update", state)
+		
+		entity_content_panel_void_node:SetSize(unpack(state and entity_content_panel_void_node_sizes or {0, 0}))
+		entity_content_panel_void_node:SetVisible(state)
+		
+		entity_content_panel_tree:Root():PerformLayout()
+	end
+end
+
 local function void_enable()
+	--stupidity!
 	--set up color modify
+	void_active = true
 	void_ambience = CreateSound(local_ply, "ambient/atmosphere/ambience5.wav")
 	void_sound = CreateSound(local_ply, "ambient/atmosphere/city_beacon_loop1.wav")
 	
-	print("Void enabled.")
+	--functions!
 	
+	update_spawn_menu(true)
+	
+	--hooks!
 	--stop skybox rendering when we are in a void
 	hook.Add("PreDrawSkyBox", "the_abx_void_event", function() if in_void then return true end end)
 	
@@ -104,10 +128,12 @@ local function void_enable()
 		render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_LESSEQUAL)
 		render.ClearBuffersObeyStencil(0, 0, 0, 255, false)
 		
-		--[[cam.Start2D()
+		--[[
+		cam.Start2D()
 			surface.SetDrawColor(192, 16, 32, 128)
 			surface.DrawRect(0, 0, ScrW(), ScrH())
-		cam.End2D()]]
+		cam.End2D()
+		--]]
 		
 		render.SetStencilEnable(false)
 	end)
@@ -199,10 +225,12 @@ local function void_enable()
 end
 
 local function void_disable()
-	print("Void disabled.")
+	void_active = false
 	
 	if void_ambience then void_ambience:Stop() end
 	if void_sound then void_sound:Stop() end
+	
+	update_spawn_menu(false)
 	
 	for index, hook_event in ipairs(void_hooks) do hook.Remove(hook_event, "the_abx_void_event") end
 end
@@ -216,11 +244,54 @@ hook.Add("InitPostEntity", "the_abx_void_event", function()
 end)
 
 hook.Add("SpawnMenuOpen", "the_abx_void_event", function()
-	local spawn_menu = g_SpawnMenu
+	local create_menu = g_SpawnMenu.CreateMenu
+	local create_menu_sheets = create_menu:GetItems()
+	local create_menu_entity_tab
+	local create_menu_weapon_tab
+	local first_time = false
 	
-	print("spawn_menu", spawn_menu)
-	print("CreateMenu", spawn_menu.CreateMenu)
-	PrintTable(spawn_menu.CreateMenu:GetChildren(), 1)
+	for index, sheet_data in pairs(create_menu_sheets) do
+		if sheet_data.Name == "#spawnmenu.category.entities" then create_menu_entity_tab = sheet_data.Panel
+		elseif sheet_data.Name == "#spawnmenu.category.weapons" then create_menu_weapon_tab = sheet_data.Panel end
+	end
+	
+	--BRUUUUUUH THIS IS SO DEEP WTF
+	--create_menu_sheets.entity:GetChild(0).ContentNavBar.Tree:Root()
+	local entity_content_panel = create_menu_entity_tab:GetChild(0)
+	local entity_content_panel_navigator = entity_content_panel.ContentNavBar
+	entity_content_panel_tree = entity_content_panel_navigator.Tree
+	local entity_content_panel_tree_root = entity_content_panel_tree:Root()
+	local entity_content_panel_tree_root_children = entity_content_panel_tree_root:GetChildNodes()
+	
+	for index, node in pairs(entity_content_panel_tree_root_children) do
+		if node:GetText() == "Void Event" then
+			if not entity_content_panel_void_node then
+				entity_content_panel_void_node = node
+				entity_content_panel_void_node_sizes = {node:GetSize()}
+				first_time = true
+				
+				print("It's out first time finding the node, so do magic things")
+				
+				node:SetIcon("autobox/scoreboard/badges/void_event/event.png")
+				node:SetName("ABXVoidEventEntitiesNode")
+				node:SetSize(unpack(void_active and entity_content_panel_void_node_sizes or {0, 0}))
+				node:SetVisible(void_active)
+				node:PerformLayout()
+			end
+		end
+	end
+	
+	print("are we new:", first_time)
+	
+	--[[print("\n1. create_menu", create_menu)
+	print(" 2. create_menu_entity_tab", create_menu_entity_tab)
+	print("  3. create_menu_weapon_tab", create_menu_weapon_tab)
+	print("   4. entity_content_panel", entity_content_panel)
+	print("    5. entity_content_panel.HorizontalDivider", entity_content_panel.HorizontalDivider, "our test variable: " .. tostring(entity_content_panel.HorizontalDivider.ABXTest))
+	print("    6. entity_content_panel_navigator", entity_content_panel_navigator)
+	print("     7. entity_content_panel_tree", entity_content_panel_tree)
+	print("      8. entity_content_panel_tree_root", entity_content_panel_tree_root)
+	PrintTable(entity_content_panel_tree_root:GetChildNodes(), 1)]]
 end)
 
 --net
@@ -234,3 +305,10 @@ end)
 --reload
 calc_vars(ScrW(), ScrH())
 hook.GetTable().InitPostEntity.the_abx_void_event()
+
+surface.CreateFont("ABXVoidEventEntity", {
+	font = "Roboto",
+	size = 64,
+	weight = 500,
+	antialias = true
+})

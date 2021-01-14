@@ -18,8 +18,16 @@ local good_void_starts = {
 
 local good_void_starts_map = table.Copy(good_void_starts[game.GetMap()] or {})
 local next_void_check = 0
+local void_active = false --SetActiveTab
 local void_regions = {}
 
+local void_sents = {
+	void_event_crystal = true,
+	void_event_cure = true,
+	void_event_goggles = true,
+}
+
+--local functions
 local function sync(ply)
 	net.Start("the_abx_void_event")
 	net.WriteTable(void_regions)
@@ -27,13 +35,16 @@ local function sync(ply)
 	if ply then net.Send(ply) else net.Broadcast() end
 end
 
-
 local function void_disable()
+	void_active = false
+	
 	hook.Remove("PlayerDeath", "the_abx_void_event")
 	hook.Remove("Think", "the_abx_void_event")
 end
 
 local function void_enable()
+	void_active = false
+	
 	hook.Add("Think", "the_abx_void_event", function()
 		local cur_time = CurTime()
 		
@@ -158,6 +169,15 @@ end, nil, "Start a void event from a random point in a predefined list.")
 
 --hooks
 hook.Add("PlayerDeath", "the_abx_void_event", function(victim, inflictor, attacker) victim:SetMaxArmor(100) end)
+
+hook.Add("PlayerSpawnSENT", "the_abx_void_event", function(ply, class)
+	if void_sents[class] then
+		if void_active then
+			--do something, like tax them
+			
+		elseif not ply:IsSuperAdmin() then return false end --only super admins can spawn this crap when there isn't an active void event
+	end
+end)
 
 --net
 net.Receive("the_abx_void_event", function(length, ply) sync(ply) end)
